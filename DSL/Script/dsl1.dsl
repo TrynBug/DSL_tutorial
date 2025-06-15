@@ -1,12 +1,3 @@
-var x = 5;
-function greet(name) {
-  print("Hello, " + name);
-}
+if not value then func(5) end
 
-if (x > 3) {
-  print("x is big");
-}
-
-while (x < 10) {
-  x = x + 1;
-}
+--val = 5 + (1 + 3)

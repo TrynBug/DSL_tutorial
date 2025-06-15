@@ -135,6 +135,7 @@
     <ClInclude Include="parser.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ast.cpp" />
     <ClCompile Include="CDSL.cpp" />
     <ClCompile Include="CDSLManager.cpp" />
     <ClCompile Include="CDSLScript.cpp" />

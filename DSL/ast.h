@@ -8,6 +8,7 @@
 
 
 
+
 namespace lua
 {
     struct Name;
@@ -21,17 +22,16 @@ namespace lua
     struct Chunk;
     struct Block;
     
-    struct Variable;
     struct Assignment;
     struct Expression;
     struct ExpressionList;
+    struct PrimaryExpression;
     struct BinaryExpression;
     struct UnaryExpression;
-    struct PrefixExpression;
     struct FunctionName;
     struct FunctionBody;
     struct FunctionDefinition;
-    struct Arg;
+    struct FunctionArguments;
     struct FunctionCall;
 
     struct Statement;
@@ -48,17 +48,16 @@ namespace lua
     using ChunkPtr = std::shared_ptr<Chunk>;
     using BlockPtr = std::shared_ptr<Block>;
 
-    using VariablePtr = std::shared_ptr<Variable>;
     using AssignmentPtr = std::shared_ptr<Assignment>;
     using ExpressionPtr = std::shared_ptr<Expression>;
     using ExpressionListPtr = std::shared_ptr<ExpressionList>;
+    using PrimaryExpressionPtr = std::shared_ptr<PrimaryExpression>;
     using BinaryExpressionPtr = std::shared_ptr<BinaryExpression>;
     using UnaryExpressionPtr = std::shared_ptr<UnaryExpression>;
-    using PrefixExpressionPtr = std::shared_ptr<PrefixExpression>;
     using FunctionNamePtr = std::shared_ptr<FunctionName>;
     using FunctionBodyPtr = std::shared_ptr<FunctionBody>;
     using FunctionDefinitionPtr = std::shared_ptr<FunctionDefinition>;
-    using ArgPtr = std::shared_ptr<Arg>;
+    using FunctionArgumentsPtr = std::shared_ptr<FunctionArguments>;
     using FunctionCallPtr = std::shared_ptr<FunctionCall>;
 
     using StatementPtr = std::shared_ptr<Statement>;
@@ -73,80 +72,55 @@ namespace lua
     using StatFunctionPtr = std::shared_ptr<StatFunction>;
 
 
+
+
     struct Name
     {
-        std::wstring name;
+        std::string name;
 
-        void print()
-        {
-            std::wcout << "print Name" << std::endl;
-        }
+        void Print(const int indent = 0) const;
     };
 
     struct NameList
     {
         std::vector<Name> names;
 
-        void print()
-        {
-            std::wcout << "print NameList" << std::endl;
-        }
+        void Print(const int indent = 0) const;
     };
 
     struct Numeral
     {
-        double value;
+        int value;
 
-        void print()
-        {
-            std::wcout << "print Numeral" << std::endl;
-        }
+        void Print(const int indent = 0) const;
     };
 
     struct Boolean
     {
         bool value;
 
-        Boolean& operator=(const bool inVal)
-        {
-            value = inVal;
-            return *this;
-        }
-
-        void print()
-        {
-            std::wcout << "print Boolean" << std::endl;
-        }
+        void Print(const int indent = 0) const;
     };
 
     struct LiteralString
     {
-        std::wstring value;
+        std::string value;
 
-        void print()
-        {
-            std::wcout << "print LiteralString" << std::endl;
-        }
+        void Print(const int indent = 0) const;
     };
 
     struct UnaryOperator
     {
-        std::wstring value;
+        std::string value;
 
-        void print()
-        {
-            std::wcout << "print UnaryOperator" << std::endl;
-        }
+        void Print(const int indent = 0) const;
     };
 
     struct BinaryOperator
     {
-        std::wstring value;
+        std::string value;
 
-        void print()
-        {
-            std::wcout << "print BinaryOperator" << std::endl;
-        }
+        void Print(const int indent = 0) const;
     };
 
 
@@ -154,14 +128,7 @@ namespace lua
     {
         BlockPtr block;
 
-        Chunk(const BlockPtr& _block)
-        {
-            std::wcout << "chunk" << std::endl;
-        }
-        void print()
-        {
-            std::wcout << "print chunk" << std::endl;
-        }
+        void Print(const int indent = 0) const;
     };
 
     struct Block
@@ -169,140 +136,171 @@ namespace lua
         std::vector<StatementPtr> statements;
         //StatReturnPtr statReturn;
 
-        void print()
+        Block(const std::vector<StatementPtr>& in_statements)
         {
-            std::wcout << "print block" << std::endl;
+            statements = in_statements;
         }
-    };
+        Block(const StatementPtr& in_statement)
+        {
+            statements.push_back(in_statement);
+        }
+        Block() 
+        {
+        }
 
-    struct Variable
-    {
-        Name name;
+        void Print(const int indent = 0) const;
     };
 
     struct Assignment
     {
-        VariablePtr variable;
+        Name name;
         ExpressionPtr expression;
+
+        void Print(const int indent = 0) const;
     };
 
+    using TypeExpression = std::variant<
+        PrimaryExpressionPtr,
+        FunctionDefinitionPtr,
+        BinaryExpressionPtr,
+        UnaryExpressionPtr>;
     struct Expression
     {
-        std::variant<
-            Boolean, 
-            Numeral, 
-            LiteralString, 
-            FunctionDefinitionPtr,
-            BinaryExpressionPtr, 
-            UnaryExpressionPtr> expression;
+        TypeExpression expression;
 
-        void print()
-        {
-            std::wcout << "print Expression" << std::endl;
-        }
+        void Print(const int indent = 0) const;
     };
 
     struct ExpressionList
     {
         std::vector<ExpressionPtr> expressions;
+
+        void Print(const int indent = 0) const;
+    };
+
+    using TypePrimaryExpression = std::variant<Name, Numeral, Boolean, LiteralString, ExpressionPtr>;
+    struct PrimaryExpression
+    {
+        TypePrimaryExpression primaryExpression;
+
+        void Print(const int indent = 0) const;
     };
 
     struct BinaryExpression
     {
-        ExpressionPtr expression1;
+        PrimaryExpressionPtr primaryExpression1;
         BinaryOperator binaryOperator;
-        ExpressionPtr expression2;
+        PrimaryExpressionPtr primaryExpression2;
+
+        void Print(const int indent = 0) const;
     };
 
     struct UnaryExpression
     {
         UnaryOperator unaryOperator;
-        ExpressionPtr expression;
-    };
+        PrimaryExpressionPtr primaryExpression;
 
-    struct PrefixExpression
-    {
-        std::variant<Variable, FunctionCallPtr, ExpressionPtr> prefixExpression;
+        void Print(const int indent = 0) const;
     };
 
     struct FunctionName
     {
         Name name;
+
+        void Print(const int indent = 0) const;
     };
 
     struct FunctionBody
     {
         NameList params;
         BlockPtr block;
+
+        void Print(const int indent = 0) const;
     };
 
     struct FunctionDefinition
     {
         FunctionNamePtr functionName;
         FunctionBodyPtr functionBody;
+
+        void Print(const int indent = 0) const;
     };
 
-    struct Arg
+    struct FunctionArguments
     {
         ExpressionListPtr expressionList;
+
+        void Print(const int indent = 0) const;
     };
 
     struct FunctionCall
     {
-        PrefixExpressionPtr prefixExpression;
-        ArgPtr arg;
+        Name name;
+        FunctionArgumentsPtr functionArguments;
+
+        void Print(const int indent = 0) const;
     };
 
 
+    using TypeStatement = std::variant<
+        AssignmentPtr,
+        FunctionCallPtr,
+        StatBreakPtr,
+        StatGotoPtr,
+        StatDoPtr,
+        StatWhilePtr,
+        StatRepeatPtr,
+        StatIfPtr,
+        StatForPtr>;
     struct Statement
     {
-        std::variant<
-            AssignmentPtr,
-            FunctionCallPtr,
-            StatBreakPtr,
-            StatGotoPtr,
-            StatDoPtr,
-            StatWhilePtr,
-            StatRepeatPtr,
-            StatIfPtr,
-            StatForPtr> statement;
+        TypeStatement statement;
 
-        void print()
-        {
-            std::wcout << "print statement" << std::endl;
-        }
+        void Print(const int indent = 0) const;
     };
 
     struct StatReturn 
     {
         std::vector<ExpressionPtr> expressions;
+
+        void Print(const int indent = 0) const;
     };
 
     struct StatBreak 
     {
-        std::wstring value;
+        std::string value;
+
+        void Print(const int indent = 0) const;
     };
 
     struct StatGoto
     {
         Name name;
+
+        void Print(const int indent = 0) const;
     };
 
     struct StatDo
     {
         BlockPtr block;
+
+        void Print(const int indent = 0) const;
     };
 
     struct StatWhile
     {
         ExpressionPtr expression;
         StatDoPtr statDo;
+
+        void Print(const int indent = 0) const;
     };
 
     struct StatRepeat
     {
         BlockPtr block;
         ExpressionPtr expression;
+
+        void Print(const int indent = 0) const;
     };
 
     struct StatIf
@@ -311,10 +309,7 @@ namespace lua
         BlockPtr block;
         StatIfPtr statIf;
 
-        void print()
-        {
-            std::wcout << "print statif" << std::endl;
-        }
+        void Print(const int indent = 0) const;
     };
 
     struct StatFor
@@ -323,15 +318,27 @@ namespace lua
         ExpressionPtr expression1;
         ExpressionPtr expression2;
         ExpressionPtr expression3;
+
+        void Print(const int indent = 0) const;
     };
 
     struct StatFunction
     {
         FunctionNamePtr functionName;
         FunctionBodyPtr functionBody;
+
+        void Print(const int indent = 0) const;
     };
 
-    void print(const std::wstring str);
+    void print(const std::string str);
+
+
+
+
+
+
+
+
 
 
 }

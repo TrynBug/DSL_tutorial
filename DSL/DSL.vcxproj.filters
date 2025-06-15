@@ -33,6 +33,9 @@
     <ClCompile Include="parser.cpp">
       <Filter>소스 파일\BoostParser</Filter>
     </ClCompile>
+    <ClCompile Include="ast.cpp">
+      <Filter>소스 파일\BoostParser</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CDSL.h">
