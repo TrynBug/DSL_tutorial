@@ -58,18 +58,39 @@ namespace lua
     void Chunk::Print(const int indent /*= 0*/) const
     {
         std::cout << std::string(indent, ' ') << "Chunk:" << std::endl;
-        if (block)
+        if(block)
             block->Print(indent + 2);
+            
     }
 
+    //void Block::Print(const int indent /*= 0*/) const
+    //{
+    //    std::cout << std::string(indent, ' ') << "Block:" << std::endl;
+    //    for (const StatementPtr& statement : statements)
+    //    {
+    //        if (statement)
+    //            statement->Print(indent + 2);
+    //    }
+    //}
     void Block::Print(const int indent /*= 0*/) const
     {
         std::cout << std::string(indent, ' ') << "Block:" << std::endl;
-        for (const StatementPtr& statement : statements)
-        {
-            if (statement)
-                statement->Print(indent + 2);
-        }
+        std::visit([indent](const auto& val)
+            {
+                using T = std::decay_t<decltype(val)>;
+                if constexpr (std::is_same_v<T, StatementPtr>) {
+                    if (val)
+                        val->Print(indent + 2);
+                }
+                else if constexpr (std::is_same_v<T, std::vector<StatementPtr>>)
+                {
+                    for (const StatementPtr& statement : val)
+                    {
+                        if (statement)
+                            statement->Print(indent + 2);
+                    }
+                }
+            }, block);
     }
 
     void Assignment::Print(const int indent /*= 0*/) const

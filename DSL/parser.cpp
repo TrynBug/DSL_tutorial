@@ -81,7 +81,8 @@ BOOST_FUSION_ADAPT_STRUCT(lua::UnaryOperator, value)
 BOOST_FUSION_ADAPT_STRUCT(lua::BinaryOperator, value)
 BOOST_FUSION_ADAPT_STRUCT(lua::Chunk, block)
 //BOOST_FUSION_ADAPT_STRUCT(lua::Block, statements, statReturn)
-BOOST_FUSION_ADAPT_STRUCT(lua::Block, statements)
+//BOOST_FUSION_ADAPT_STRUCT(lua::Block, statements)
+BOOST_FUSION_ADAPT_STRUCT(lua::Block, block)
 BOOST_FUSION_ADAPT_STRUCT(lua::Assignment, name, expression)
 BOOST_FUSION_ADAPT_STRUCT(lua::Expression, expression)
 BOOST_FUSION_ADAPT_STRUCT(lua::ExpressionList, expressions)
@@ -90,7 +91,7 @@ BOOST_FUSION_ADAPT_STRUCT(lua::BinaryExpression, primaryExpression1, binaryOpera
 BOOST_FUSION_ADAPT_STRUCT(lua::UnaryExpression, unaryOperator, primaryExpression)
 BOOST_FUSION_ADAPT_STRUCT(lua::FunctionName, name)
 BOOST_FUSION_ADAPT_STRUCT(lua::FunctionBody, params, block)
-BOOST_FUSION_ADAPT_STRUCT(lua::FunctionDefinition, functionBody, functionName)
+BOOST_FUSION_ADAPT_STRUCT(lua::FunctionDefinition, functionBody, name)
 BOOST_FUSION_ADAPT_STRUCT(lua::FunctionArguments, expressionList)
 BOOST_FUSION_ADAPT_STRUCT(lua::FunctionCall, name, functionArguments)
 BOOST_FUSION_ADAPT_STRUCT(lua::Statement, statement)
@@ -130,22 +131,22 @@ struct lua_grammar : qi::grammar<Iterator, lua::ChunkPtr(), skipper<Iterator>> {
         ruleAssignment          = (ruleName >> lit('=') >> ruleExpression)[_val = construct<lua::AssignmentPtr>(new_<lua::Assignment>(_1, _2))];
 
         ruleTypeExpression      = rulePrimaryExpression | ruleUnaryExpression | ruleBinaryExpression ;
-        ruleExpression          = ruleTypeExpression[_val = bind([](const lua::TypeExpression& val) { return std::make_shared<lua::Expression>(val); }, _1)];
+        ruleExpression          = ruleTypeExpression[_val = bind([](const lua::TypeExpression& val) { return std::make_shared<lua::Expression>(val); }, _1)];   // 이렇게 안하면 ruleTypeExpression 에서 마지막 rule이 매칭됐을때만 값이 들어감
         ruleExpressionList      = (ruleExpression % ',')[_val = construct<lua::ExpressionListPtr>(new_<lua::ExpressionList>(_1))];
 
         ruleTypePrimaryExpression = ruleName | ruleNumeral | ruleLiteralString | ruleBoolean | (lit('(') >> ruleExpression >> lit(')'));
-        rulePrimaryExpression = ruleTypePrimaryExpression[_val = bind([](const lua::TypePrimaryExpression& val) { return std::make_shared<lua::PrimaryExpression>(val); }, _1)];
+        rulePrimaryExpression   = ruleTypePrimaryExpression[_val = bind([](const lua::TypePrimaryExpression& val) { return std::make_shared<lua::PrimaryExpression>(val); }, _1)];
         ruleBinaryExpression    = (rulePrimaryExpression >> ruleBinaryOperator >> rulePrimaryExpression) [_val = construct<lua::BinaryExpressionPtr>(new_<lua::BinaryExpression>(_1, _2, _3))];
         ruleUnaryExpression     = (ruleUnaryOperator >> rulePrimaryExpression) [_val = construct<lua::UnaryExpressionPtr>(new_<lua::UnaryExpression>(_1, _2))];
         
-        ruleFunctionDefinition = (lit("function") >> ruleFunctionName >> ruleFunctionBody)[_val = construct<lua::FunctionDefinitionPtr>(new_<lua::FunctionDefinition>(_1, _2))];
+        ruleFunctionDefinition = (lit("function") >> ruleName >> ruleFunctionBody)[_val = construct<lua::FunctionDefinitionPtr>(new_<lua::FunctionDefinition>(_1, _2))];
         ruleFunctionName       = ruleName[_val = construct<lua::FunctionNamePtr>(new_<lua::FunctionName>(_1))];
         ruleFunctionBody       = (lit('(') >> ruleNameList >> lit(')') >> ruleBlock >> lit("end"))[_val = construct<lua::FunctionBodyPtr>(new_<lua::FunctionBody>(_1, _2))];
         ruleFunctionArguments   =   (lit('(') >> lit(')'))[_val = construct<lua::FunctionArgumentsPtr>(new_<lua::FunctionArguments>())]
                                   | (lit('(') >> ruleExpressionList >> lit(')'))[_val = construct<lua::FunctionArgumentsPtr>(new_<lua::FunctionArguments>(_1))];
         ruleFunctionCall       = (ruleName >> ruleFunctionArguments)[_val = construct<lua::FunctionCallPtr>(new_<lua::FunctionCall>(_1, _2))];
 
-        ruleTypeStatement      = ruleStatIf | ruleFunctionCall | ruleAssignment;
+        ruleTypeStatement      = ruleStatIf | ruleFunctionDefinition | ruleFunctionCall | ruleAssignment;
         ruleStatement          = ruleTypeStatement[_val = bind([](const lua::TypeStatement& val) { return std::make_shared<lua::Statement>(val); }, _1)];
         ruleStatReturn;
         ruleStatBreak;
@@ -157,11 +158,21 @@ struct lua_grammar : qi::grammar<Iterator, lua::ChunkPtr(), skipper<Iterator>> {
         ruleStatFor;
         ruleStatFunction;
 
-
-        ruleBlock = +ruleStatement [_val = construct<lua::BlockPtr>(new_<lua::Block>(_1))];
-        //ruleBlock = + ruleStatement[_val = construct<lua::BlockPtr>(new lua::Block()), bind(&lua::Block::statements, *_val) = _1];
+        ruleTypeBlock          = ruleStatement >> *ruleStatement;
+        ruleBlock               = ruleTypeBlock[_val = bind([](const lua::TypeBlock& val) { return std::make_shared<lua::Block>(val); }, _1)];
+        // 현재 문제점: statement가 여러개여도 마지막 1개만 들어감
+        //ruleBlock = +ruleStatement [_val = construct<lua::BlockPtr>(new_<lua::Block>(_1))];
+        //ruleBlock = qi::eps[_val = construct<lua::BlockPtr>(new_<lua::Block>())] >> +ruleStatement[push_back(bind(&lua::Block::statements, *_val), _1)];
+        //ruleBlock = ruleStatement[_val = construct<lua::BlockPtr>(new_<lua::Block>(_1))] >> ruleStatement[push_back(bind(&lua::Block::statements, *_val), _1)] ;
+        //ruleBlock = ruleStatement[_val = bind([](const lua::StatementPtr& val) { return std::make_shared<lua::Block>(val); }, _1)];
         ruleChunk = ruleBlock[_val = construct<lua::ChunkPtr>(new_<lua::Chunk>(_1))];
 
+
+
+        //qi::on_success(ruleBlock, [this](auto& context) {
+        //    lua::BlockPtr block = context.get<lua::BlockPtr>();
+        //    //static_cast<lua::BlockPtr>(_val(ctx))->statements.push_back(_attr(ctx));
+        //    });
 
         BOOST_SPIRIT_DEBUG_NODES((ruleName)(ruleNumeral)(ruleBoolean)(ruleLiteralString)(ruleBinaryOperator)(ruleUnaryOperator)(ruleNameList));
         BOOST_SPIRIT_DEBUG_NODES((ruleAssignment)(ruleExpression)(ruleExpressionList)(rulePrimaryExpression)(ruleBinaryExpression)(ruleUnaryExpression));
@@ -213,6 +224,7 @@ struct lua_grammar : qi::grammar<Iterator, lua::ChunkPtr(), skipper<Iterator>> {
     qi::rule<Iterator, lua::StatForPtr(), skipper<Iterator>> ruleStatFor;
     qi::rule<Iterator, lua::StatFunctionPtr(), skipper<Iterator>> ruleStatFunction;
 
+    qi::rule<Iterator, lua::TypeBlock(), skipper<Iterator>> ruleTypeBlock;
     qi::rule<Iterator, lua::BlockPtr(), skipper<Iterator>> ruleBlock;
     qi::rule<Iterator, lua::ChunkPtr(), skipper<Iterator>> ruleChunk;
 };

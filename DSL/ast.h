@@ -131,22 +131,34 @@ namespace lua
         void Print(const int indent = 0) const;
     };
 
+    //struct Block
+    //{
+    //    std::vector<StatementPtr> statements;
+
+    //    Block(const std::vector<StatementPtr>& in_statements)
+    //    {
+    //        statements = in_statements;
+    //    }
+    //    Block(const StatementPtr& in_statement)
+    //    {
+    //        statements.push_back(in_statement);
+    //    }
+    //    Block() 
+    //    {
+    //    }
+
+    //    void push_back(const StatementPtr& st) {}
+    //    void push_back(const std::vector<StatementPtr>& st) {}
+
+    //    void Print(const int indent = 0) const;
+    //};
+
+    using TypeBlock = std::variant<
+        StatementPtr,
+        std::vector<StatementPtr>>;
     struct Block
     {
-        std::vector<StatementPtr> statements;
-        //StatReturnPtr statReturn;
-
-        Block(const std::vector<StatementPtr>& in_statements)
-        {
-            statements = in_statements;
-        }
-        Block(const StatementPtr& in_statement)
-        {
-            statements.push_back(in_statement);
-        }
-        Block() 
-        {
-        }
+        TypeBlock block;
 
         void Print(const int indent = 0) const;
     };
@@ -220,7 +232,7 @@ namespace lua
 
     struct FunctionDefinition
     {
-        FunctionNamePtr functionName;
+        Name name;
         FunctionBodyPtr functionBody;
 
         void Print(const int indent = 0) const;
@@ -244,6 +256,7 @@ namespace lua
 
     using TypeStatement = std::variant<
         AssignmentPtr,
+        FunctionDefinitionPtr,
         FunctionCallPtr,
         StatBreakPtr,
         StatGotoPtr,
