@@ -29,10 +29,9 @@ namespace lua
     struct BinaryExpression;
     struct UnaryExpression;
     struct FunctionName;
-    struct FunctionBody;
     struct FunctionDefinition;
-    struct FunctionArguments;
     struct FunctionCall;
+    struct FunctionArguments;
 
     struct Statement;
     struct StatReturn;
@@ -43,7 +42,6 @@ namespace lua
     struct StatRepeat;
     struct StatIf;
     struct StatFor;
-    struct StatFunction;
 
     using ChunkPtr = std::shared_ptr<Chunk>;
     using BlockPtr = std::shared_ptr<Block>;
@@ -55,10 +53,9 @@ namespace lua
     using BinaryExpressionPtr = std::shared_ptr<BinaryExpression>;
     using UnaryExpressionPtr = std::shared_ptr<UnaryExpression>;
     using FunctionNamePtr = std::shared_ptr<FunctionName>;
-    using FunctionBodyPtr = std::shared_ptr<FunctionBody>;
     using FunctionDefinitionPtr = std::shared_ptr<FunctionDefinition>;
-    using FunctionArgumentsPtr = std::shared_ptr<FunctionArguments>;
     using FunctionCallPtr = std::shared_ptr<FunctionCall>;
+    using FunctionArgumentsPtr = std::shared_ptr<FunctionArguments>;
 
     using StatementPtr = std::shared_ptr<Statement>;
     using StatReturnPtr = std::shared_ptr<StatReturn>;
@@ -69,7 +66,6 @@ namespace lua
     using StatRepeatPtr = std::shared_ptr<StatRepeat>;
     using StatIfPtr = std::shared_ptr<StatIf>;
     using StatForPtr = std::shared_ptr<StatFor>;
-    using StatFunctionPtr = std::shared_ptr<StatFunction>;
 
 
 
@@ -131,36 +127,23 @@ namespace lua
         void Print(const int indent = 0) const;
     };
 
-    //struct Block
-    //{
-    //    std::vector<StatementPtr> statements;
-
-    //    Block(const std::vector<StatementPtr>& in_statements)
-    //    {
-    //        statements = in_statements;
-    //    }
-    //    Block(const StatementPtr& in_statement)
-    //    {
-    //        statements.push_back(in_statement);
-    //    }
-    //    Block() 
-    //    {
-    //    }
-
-    //    void push_back(const StatementPtr& st) {}
-    //    void push_back(const std::vector<StatementPtr>& st) {}
-
-    //    void Print(const int indent = 0) const;
-    //};
-
-    using TypeBlock = std::variant<
-        StatementPtr,
-        std::vector<StatementPtr>>;
     struct Block
     {
-        TypeBlock block;
+       std::vector<StatementPtr> statements;
 
-        void Print(const int indent = 0) const;
+       Block(const std::vector<StatementPtr>& in_statements)
+       {
+           statements = in_statements;
+       }
+       Block(const StatementPtr& in_statement)
+       {
+           statements.push_back(in_statement);
+       }
+       Block() 
+       {
+       }
+       
+       void Print(const int indent = 0) const;
     };
 
     struct Assignment
@@ -222,25 +205,11 @@ namespace lua
         void Print(const int indent = 0) const;
     };
 
-    struct FunctionBody
-    {
-        NameList params;
-        BlockPtr block;
-
-        void Print(const int indent = 0) const;
-    };
-
     struct FunctionDefinition
     {
         Name name;
-        FunctionBodyPtr functionBody;
-
-        void Print(const int indent = 0) const;
-    };
-
-    struct FunctionArguments
-    {
-        ExpressionListPtr expressionList;
+        NameList params;
+        BlockPtr block;
 
         void Print(const int indent = 0) const;
     };
@@ -249,6 +218,13 @@ namespace lua
     {
         Name name;
         FunctionArgumentsPtr functionArguments;
+  
+        void Print(const int indent = 0) const;
+    };
+
+    struct FunctionArguments
+    {
+        ExpressionListPtr expressions;
 
         void Print(const int indent = 0) const;
     };
@@ -331,14 +307,6 @@ namespace lua
         ExpressionPtr expression1;
         ExpressionPtr expression2;
         ExpressionPtr expression3;
-
-        void Print(const int indent = 0) const;
-    };
-
-    struct StatFunction
-    {
-        FunctionNamePtr functionName;
-        FunctionBodyPtr functionBody;
 
         void Print(const int indent = 0) const;
     };

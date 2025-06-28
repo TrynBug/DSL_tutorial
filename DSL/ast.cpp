@@ -63,34 +63,14 @@ namespace lua
             
     }
 
-    //void Block::Print(const int indent /*= 0*/) const
-    //{
-    //    std::cout << std::string(indent, ' ') << "Block:" << std::endl;
-    //    for (const StatementPtr& statement : statements)
-    //    {
-    //        if (statement)
-    //            statement->Print(indent + 2);
-    //    }
-    //}
     void Block::Print(const int indent /*= 0*/) const
     {
-        std::cout << std::string(indent, ' ') << "Block:" << std::endl;
-        std::visit([indent](const auto& val)
-            {
-                using T = std::decay_t<decltype(val)>;
-                if constexpr (std::is_same_v<T, StatementPtr>) {
-                    if (val)
-                        val->Print(indent + 2);
-                }
-                else if constexpr (std::is_same_v<T, std::vector<StatementPtr>>)
-                {
-                    for (const StatementPtr& statement : val)
-                    {
-                        if (statement)
-                            statement->Print(indent + 2);
-                    }
-                }
-            }, block);
+       std::cout << std::string(indent, ' ') << "Block:" << std::endl;
+       for (const StatementPtr& statement : statements)
+       {
+           if (statement)
+               statement->Print(indent + 2);
+       }
     }
 
     void Assignment::Print(const int indent /*= 0*/) const
@@ -166,21 +146,14 @@ namespace lua
         std::cout << std::string(indent, ' ') << "FunctionName: " << std::endl;
     }
 
-    void FunctionBody::Print(const int indent /*= 0*/) const
-    {
-        std::cout << std::string(indent, ' ') << "FunctionBody: " << std::endl;
-    }
-
     void FunctionDefinition::Print(const int indent /*= 0*/) const
     {
         std::cout << std::string(indent, ' ') << "FunctionDefinition: " << std::endl;
-    }
 
-    void FunctionArguments::Print(const int indent /*= 0*/) const
-    {
-        std::cout << std::string(indent, ' ') << "FunctionArguments: " << std::endl;
-        if (expressionList)
-            expressionList->Print(indent + 2);
+        name.Print(indent + 2);
+        params.Print(indent + 2);
+        if(block)
+            block->Print (indent + 2);
     }
 
     void FunctionCall::Print(const int indent /*= 0*/) const
@@ -189,6 +162,13 @@ namespace lua
         name.Print(indent + 2);
         if (functionArguments)
             functionArguments->Print(indent + 2);
+    }
+
+    void FunctionArguments::Print(const int indent /*= 0*/) const
+    {
+        std::cout << std::string(indent, ' ') << "FunctionArguments: " << std::endl;
+        if(expressions)
+            expressions->Print(indent + 2);
     }
 
     void Statement::Print(const int indent /*= 0*/) const
@@ -251,10 +231,5 @@ namespace lua
     void StatFor::Print(const int indent /*= 0*/) const
     {
         std::cout << std::string(indent, ' ') << "StatFor: " << std::endl;
-    }
-
-    void StatFunction::Print(const int indent /*= 0*/) const
-    {
-        std::cout << std::string(indent, ' ') << "StatFunction: " << std::endl;
     }
 }
