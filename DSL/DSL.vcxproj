@@ -129,18 +129,22 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="ast.h" />
+    <ClInclude Include="ast2.h" />
     <ClInclude Include="CDSL.h" />
     <ClInclude Include="CDSLManager.h" />
     <ClInclude Include="CDSLScript.h" />
     <ClInclude Include="parser.h" />
+    <ClInclude Include="parser2.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ast.cpp" />
+    <ClCompile Include="ast2.cpp" />
     <ClCompile Include="CDSL.cpp" />
     <ClCompile Include="CDSLManager.cpp" />
     <ClCompile Include="CDSLScript.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="parser.cpp" />
+    <ClCompile Include="parser2.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
