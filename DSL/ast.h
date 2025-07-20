@@ -1,25 +1,28 @@
-#pragma once
+﻿#pragma once
 
+#include <iostream>
 #include <string>
-#include <variant>
-#include <optional>
 #include <vector>
+#include <map>
+#include <unordered_map>
 #include <memory>
 
+/*
+AST는 Abstract Syntax Tree (추상 구문 트리)를 의미한다.
+파싱한 결과를 구조화한 트리 형태의 데이터 구조이다.
+*/
 
-
-
-namespace lua
+namespace dsl
 {
+    struct Base;
+
     struct Name;
     struct NameList;
     struct Numeral;
     struct Boolean;
     struct LiteralString;
-    struct UnaryOperator;
-    struct BinaryOperator;
 
-    struct Chunk;
+    struct AST;
     struct Block;
     
     struct Assignment;
@@ -31,19 +34,24 @@ namespace lua
     struct FunctionName;
     struct FunctionDefinition;
     struct FunctionCall;
-    struct FunctionArguments;
+    struct FunctionArgument;
 
     struct Statement;
-    struct StatReturn;
-    struct StatBreak;
-    struct StatGoto;
-    struct StatDo;
-    struct StatWhile;
-    struct StatRepeat;
-    struct StatIf;
-    struct StatFor;
+    struct Return;
+    struct Break;
+    struct While;
+    struct If;
+    struct For;
 
-    using ChunkPtr = std::shared_ptr<Chunk>;
+    using BasePtr = std::shared_ptr<Base>;
+
+    using NamePtr = std::shared_ptr<Name>;
+    using NameListPtr = std::shared_ptr<NameList>;
+    using NumeralPtr = std::shared_ptr<Numeral>;
+    using BooleanPtr = std::shared_ptr<Boolean>;
+    using LiteralStringPtr = std::shared_ptr<LiteralString>;
+
+    using ASTPtr = std::shared_ptr<AST>;
     using BlockPtr = std::shared_ptr<Block>;
 
     using AssignmentPtr = std::shared_ptr<Assignment>;
@@ -55,268 +63,259 @@ namespace lua
     using FunctionNamePtr = std::shared_ptr<FunctionName>;
     using FunctionDefinitionPtr = std::shared_ptr<FunctionDefinition>;
     using FunctionCallPtr = std::shared_ptr<FunctionCall>;
-    using FunctionArgumentsPtr = std::shared_ptr<FunctionArguments>;
+    using FunctionArgumentPtr = std::shared_ptr<FunctionArgument>;
 
     using StatementPtr = std::shared_ptr<Statement>;
-    using StatReturnPtr = std::shared_ptr<StatReturn>;
-    using StatBreakPtr = std::shared_ptr<StatBreak>;
-    using StatGotoPtr = std::shared_ptr<StatGoto>;
-    using StatDoPtr = std::shared_ptr<StatDo>;
-    using StatWhilePtr = std::shared_ptr<StatWhile>;
-    using StatRepeatPtr = std::shared_ptr<StatRepeat>;
-    using StatIfPtr = std::shared_ptr<StatIf>;
-    using StatForPtr = std::shared_ptr<StatFor>;
+    using ReturnPtr = std::shared_ptr<Return>;
+    using BreakPtr = std::shared_ptr<Break>;
+    using WhilePtr = std::shared_ptr<While>;
+    using IfPtr = std::shared_ptr<If>;
+    using ForPtr = std::shared_ptr<For>;
 
 
-
-
-    struct Name
+    struct Base
     {
-        std::string name;
-
-        void Print(const int indent = 0) const;
-    };
-
-    struct NameList
-    {
-        std::vector<Name> names;
-
-        void Print(const int indent = 0) const;
-    };
-
-    struct Numeral
-    {
-        int value;
-
-        void Print(const int indent = 0) const;
-    };
-
-    struct Boolean
-    {
-        bool value;
-
-        void Print(const int indent = 0) const;
-    };
-
-    struct LiteralString
-    {
-        std::string value;
-
-        void Print(const int indent = 0) const;
-    };
-
-    struct UnaryOperator
-    {
-        std::string value;
-
-        void Print(const int indent = 0) const;
-    };
-
-    struct BinaryOperator
-    {
-        std::string value;
-
-        void Print(const int indent = 0) const;
+        virtual void Print(const int indent = 0) const = 0;
     };
 
 
-    struct Chunk
-    {
-        BlockPtr block;
 
-        void Print(const int indent = 0) const;
+    struct Name : public Base
+    {
+        std::wstring name;
+
+        Name() {}
+        Name(const std::wstring& val) : name(val) {}
+
+        void Print(const int indent = 0) const override;
     };
 
-    struct Block
+    struct NameList : public Base
     {
-       std::vector<StatementPtr> statements;
+        std::vector<BasePtr> names;
 
-       Block(const std::vector<StatementPtr>& in_statements)
-       {
-           statements = in_statements;
-       }
-       Block(const StatementPtr& in_statement)
-       {
-           statements.push_back(in_statement);
-       }
-       Block() 
-       {
-       }
+        NameList() {}
+        NameList(const std::vector<BasePtr>& val) : names(val) {}
+
+        void Print(const int indent = 0) const override;
+    };
+
+    struct Numeral : public Base
+    {
+        bool isInteger = true;
+        __int64 intValue = 0;
+        double floatValue = 0.0;
+
+        Numeral() {};
+        Numeral(__int64 val) : isInteger(true), intValue(val), floatValue(0.0) {}
+        Numeral(double val) : isInteger(false), intValue(0), floatValue(val) {}
+
+        void Print(const int indent = 0) const override;
+    };
+
+    struct Boolean : public Base
+    {
+        bool value = false;
+
+        Boolean() {}
+        Boolean(bool val) : value(val) {}
+
+        void Print(const int indent = 0) const override;
+    };
+
+    struct LiteralString : public Base
+    {
+        std::wstring value;
+
+        LiteralString() {}
+        LiteralString(const std::wstring& val) : value(val) {}
+
+        void Print(const int indent = 0) const override;
+    };
+
+    struct AST : public Base
+    {
+        BasePtr block;
+
+        AST() {}
+        AST(const BasePtr& val) : block(val) {}
+
+        void Print(const int indent = 0) const override;
+    };
+
+    struct Block : public Base
+    {
+       std::vector<BasePtr> statements;
+
+       Block() {}
+       Block(const std::vector<BasePtr>& val) : statements(val) {}
        
-       void Print(const int indent = 0) const;
+       void Print(const int indent = 0) const override;
     };
 
-    struct Assignment
+    struct Assignment : public Base
+    {
+        BasePtr name;
+        BasePtr expression;
+
+        Assignment() {}
+        Assignment(const BasePtr& _name, const BasePtr& _expression) : name(_name), expression(_expression) {}
+
+        void Print(const int indent = 0) const override;
+    };
+
+    struct Expression : public Base
+    {
+        BasePtr expression;
+
+        Expression() {}
+        Expression(const BasePtr& val) : expression(val) {}
+
+        void Print(const int indent = 0) const override;
+    };
+
+    struct ExpressionList : public Base
+    {
+        std::vector<BasePtr> expressions;
+
+        ExpressionList() {}
+        ExpressionList(const std::vector<BasePtr>& val) : expressions(val) {}
+
+        void Print(const int indent = 0) const override;
+    };
+
+    struct PrimaryExpression : public Base
+    {
+        BasePtr primaryExpression;
+
+        void Print(const int indent = 0) const override;
+    };
+
+    struct BinaryExpression : public Base
+    {
+        BasePtr primaryExpression1;
+        std::wstring binaryOperator;
+        BasePtr primaryExpression2;
+
+        BinaryExpression() {}
+        BinaryExpression(const BasePtr& ex1, const std::wstring& op, const BasePtr& ex2) : primaryExpression1(ex1), binaryOperator(op), primaryExpression2(ex2) {}
+
+        void Print(const int indent = 0) const override;
+    };
+
+    struct UnaryExpression : public Base
+    {
+        std::wstring unaryOperator;
+        BasePtr primaryExpression;
+
+        UnaryExpression() {}
+        UnaryExpression(const std::wstring& op, const BasePtr& ex) : unaryOperator(op), primaryExpression(ex) {}
+
+        void Print(const int indent = 0) const override;
+    };
+
+    struct FunctionName : public Base
     {
         Name name;
-        ExpressionPtr expression;
 
-        void Print(const int indent = 0) const;
+        void Print(const int indent = 0) const override;
     };
 
-    using TypeExpression = std::variant<
-        PrimaryExpressionPtr,
-        FunctionDefinitionPtr,
-        BinaryExpressionPtr,
-        UnaryExpressionPtr>;
-    struct Expression
+    struct FunctionDefinition : public Base
     {
-        TypeExpression expression;
+        BasePtr name;
+        BasePtr functionParameter;
+        BasePtr block;
 
-        void Print(const int indent = 0) const;
+        FunctionDefinition() {}
+        FunctionDefinition(const BasePtr& _name, const BasePtr& _functionParameter, const BasePtr& _block) : name(_name), functionParameter(_functionParameter), block(_block) {}
+
+        void Print(const int indent = 0) const override;
     };
 
-    struct ExpressionList
+    struct FunctionParameter : public Base
     {
-        std::vector<ExpressionPtr> expressions;
+        BasePtr nameList;
 
-        void Print(const int indent = 0) const;
+        FunctionParameter() {}
+        FunctionParameter(const BasePtr& _nameList) : nameList(_nameList) {}
+
+        void Print(const int indent = 0) const override;
     };
 
-    using TypePrimaryExpression = std::variant<Name, Numeral, Boolean, LiteralString, ExpressionPtr>;
-    struct PrimaryExpression
+    struct FunctionArgument : public Base
     {
-        TypePrimaryExpression primaryExpression;
+        BasePtr expressionList;
 
-        void Print(const int indent = 0) const;
+        FunctionArgument() {}
+        FunctionArgument(const BasePtr& _expressionList) : expressionList(_expressionList) {}
+
+        void Print(const int indent = 0) const override;
     };
 
-    struct BinaryExpression
+    struct FunctionCall : public Base
     {
-        PrimaryExpressionPtr primaryExpression1;
-        BinaryOperator binaryOperator;
-        PrimaryExpressionPtr primaryExpression2;
-
-        void Print(const int indent = 0) const;
-    };
-
-    struct UnaryExpression
-    {
-        UnaryOperator unaryOperator;
-        PrimaryExpressionPtr primaryExpression;
-
-        void Print(const int indent = 0) const;
-    };
-
-    struct FunctionName
-    {
-        Name name;
-
-        void Print(const int indent = 0) const;
-    };
-
-    struct FunctionDefinition
-    {
-        Name name;
-        NameList params;
-        BlockPtr block;
-
-        void Print(const int indent = 0) const;
-    };
-
-    struct FunctionCall
-    {
-        Name name;
-        FunctionArgumentsPtr functionArguments;
+        BasePtr name;
+        BasePtr functionArgument;
   
-        void Print(const int indent = 0) const;
+        FunctionCall() {}
+        FunctionCall(const BasePtr& _name, const BasePtr& _functionArgument) : name(_name), functionArgument(_functionArgument) {}
+
+        void Print(const int indent = 0) const override;
     };
 
-    struct FunctionArguments
+    struct Statement : public Base
     {
-        ExpressionListPtr expressions;
+        BasePtr statement;
 
-        void Print(const int indent = 0) const;
+        Statement() {}
+        Statement(const BasePtr& _statement) : statement(_statement) {}
+
+        void Print(const int indent = 0) const override;
     };
 
-
-    using TypeStatement = std::variant<
-        AssignmentPtr,
-        FunctionDefinitionPtr,
-        FunctionCallPtr,
-        StatBreakPtr,
-        StatGotoPtr,
-        StatDoPtr,
-        StatWhilePtr,
-        StatRepeatPtr,
-        StatIfPtr,
-        StatForPtr>;
-    struct Statement
+    struct Return : public Base
     {
-        TypeStatement statement;
+        std::vector<BasePtr> expressions;
 
-        void Print(const int indent = 0) const;
+        void Print(const int indent = 0) const override;
     };
 
-    struct StatReturn 
+    struct Break : public Base
     {
-        std::vector<ExpressionPtr> expressions;
+        std::wstring value;
 
-        void Print(const int indent = 0) const;
+        void Print(const int indent = 0) const override;
     };
 
-    struct StatBreak 
+    struct While : public Base
     {
-        std::string value;
+        BasePtr expression;
+        BasePtr statDo;
 
-        void Print(const int indent = 0) const;
+        void Print(const int indent = 0) const override;
     };
 
-    struct StatGoto
+    struct If : public Base
     {
-        Name name;
+        BasePtr expression;
+        BasePtr block;
+        BasePtr statIf;
 
-        void Print(const int indent = 0) const;
+        If() {}
+        If(const BasePtr& _expression, const BasePtr& _block, const BasePtr& _statIf) : expression(_expression), block(_block), statIf(_statIf) {}
+        void Print(const int indent = 0) const override;
     };
 
-    struct StatDo
+    struct For : public Base
     {
-        BlockPtr block;
+        BasePtr name;
+        BasePtr expression1;
+        BasePtr expression2;
+        BasePtr expression3;
 
-        void Print(const int indent = 0) const;
+        void Print(const int indent = 0) const override;
     };
-
-    struct StatWhile
-    {
-        ExpressionPtr expression;
-        StatDoPtr statDo;
-
-        void Print(const int indent = 0) const;
-    };
-
-    struct StatRepeat
-    {
-        BlockPtr block;
-        ExpressionPtr expression;
-
-        void Print(const int indent = 0) const;
-    };
-
-    struct StatIf
-    {
-        ExpressionPtr expression;
-        BlockPtr block;
-        StatIfPtr statIf;
-
-        void Print(const int indent = 0) const;
-    };
-
-    struct StatFor
-    {
-        Name name;
-        ExpressionPtr expression1;
-        ExpressionPtr expression2;
-        ExpressionPtr expression3;
-
-        void Print(const int indent = 0) const;
-    };
-
-    void print(const std::string str);
-
-
-
-
-
 
 
 

@@ -1,63 +1,45 @@
-#include <iostream>
-#include <variant>
-#include <string>
-#include <type_traits>
-
+﻿
 #include "ast.h"
 
 
-namespace lua
+namespace dsl
 {
-    template <typename T>
-    struct is_smart_ptr : std::false_type {};
-
-    template <typename T>
-    struct is_smart_ptr<std::shared_ptr<T>> : std::true_type {};
-
-    template <typename T>
-    inline constexpr bool is_smart_ptr_v = is_smart_ptr<T>::value;
-
-
     void Name::Print(const int indent /*= 0*/) const
     {
-        std::cout << std::string(indent, ' ') << "Name: " << name << std::endl;
+        std::wcout << std::wstring(indent, ' ') << L"Name: " << name << std::endl;
     }
 
     void NameList::Print(const int indent /*= 0*/) const
     {
-        std::cout << std::string(indent, ' ') << "NameList:" << std::endl;
-        for (const Name& name : names)
-            name.Print(indent + 2);
+        std::wcout << std::wstring(indent, ' ') << L"NameList:" << std::endl;
+        for (const BasePtr& name : names)
+        {
+            if (name)
+                name->Print(indent + 2);
+        }
     }
 
     void Numeral::Print(const int indent /*= 0*/) const
     {
-        std::cout << std::string(indent, ' ') << "Numeral: " << value << std::endl;
+        if (isInteger)
+            std::wcout << std::wstring(indent, ' ') << L"Numeral (int): " << intValue << std::endl;
+        else
+            std::wcout << std::wstring(indent, ' ') << L"Numeral (float): " << floatValue << std::endl;
     }
 
     void Boolean::Print(const int indent /*= 0*/) const
     {
-        std::cout << std::string(indent, ' ') << "Boolean: " << value << std::endl;
+        std::wcout << std::wstring(indent, ' ') << L"Boolean: " << value << std::endl;
     }
 
     void LiteralString::Print(const int indent /*= 0*/) const
     {
-        std::cout << std::string(indent, ' ') << "LiteralString: " << value << std::endl;
+        std::wcout << std::wstring(indent, ' ') << L"LiteralString: " << value << std::endl;
     }
 
-    void UnaryOperator::Print(const int indent /*= 0*/) const
+    void AST::Print(const int indent /*= 0*/) const
     {
-        std::cout << std::string(indent, ' ') << "UnaryOperator: " << value << std::endl;
-    }
-
-    void BinaryOperator::Print(const int indent /*= 0*/) const
-    {
-        std::cout << std::string(indent, ' ') << "BinaryOperator: " << value << std::endl;
-    }
-
-    void Chunk::Print(const int indent /*= 0*/) const
-    {
-        std::cout << std::string(indent, ' ') << "Chunk:" << std::endl;
+        std::wcout << std::wstring(indent, ' ') << L"AST:" << std::endl;
         if(block)
             block->Print(indent + 2);
             
@@ -65,8 +47,8 @@ namespace lua
 
     void Block::Print(const int indent /*= 0*/) const
     {
-       std::cout << std::string(indent, ' ') << "Block:" << std::endl;
-       for (const StatementPtr& statement : statements)
+       std::wcout << std::wstring(indent, ' ') << L"Block:" << std::endl;
+       for (const BasePtr& statement : statements)
        {
            if (statement)
                statement->Print(indent + 2);
@@ -75,32 +57,24 @@ namespace lua
 
     void Assignment::Print(const int indent /*= 0*/) const
     {
-        std::cout << std::string(indent, ' ') << "Assignment: " << std::endl;
-        name.Print(indent + 2);
+        std::wcout << std::wstring(indent, ' ') << L"Assignment: " << std::endl;
+        if (name)
+            name->Print(indent + 2);
         if (expression)
             expression->Print(indent + 2);
     }
 
     void Expression::Print(const int indent /*= 0*/) const
     {
-        std::cout << std::string(indent, ' ') << "Expression: " << std::endl;
-        std::visit([indent](const auto& val)
-            {
-                using T = std::decay_t<decltype(val)>;
-                if constexpr (is_smart_ptr_v<T>) {
-                    if (val)
-                        val->Print(indent + 2);
-                }
-                else {
-                    val.Print(indent + 2);
-                }
-            }, expression);
+        std::wcout << std::wstring(indent, ' ') << L"Expression: " << std::endl;
+        if (expression)
+            expression->Print(indent + 2);
     }
 
     void ExpressionList::Print(const int indent /*= 0*/) const
     {
-        std::cout << std::string(indent, ' ') << "ExpressionList: " << std::endl;
-        for (const ExpressionPtr& expression : expressions)
+        std::wcout << std::wstring(indent, ' ') << L"ExpressionList: " << std::endl;
+        for (const BasePtr& expression : expressions)
         {
             if (expression)
                 expression->Print(indent + 2);
@@ -109,117 +83,94 @@ namespace lua
 
     void PrimaryExpression::Print(const int indent /*= 0*/) const
     {
-        std::cout << std::string(indent, ' ') << "PrimaryExpression: " << std::endl;
-        std::visit([indent](const auto& val)
-            {
-                using T = std::decay_t<decltype(val)>;
-                if constexpr (is_smart_ptr_v<T>) {
-                    if (val)
-                        val->Print(indent + 2);
-                }
-                else {
-                    val.Print(indent + 2);
-                }
-            }, primaryExpression);
+        std::wcout << std::wstring(indent, ' ') << L"PrimaryExpression: " << std::endl;
+
     }
 
     void BinaryExpression::Print(const int indent /*= 0*/) const
     {
-        std::cout << std::string(indent, ' ') << "BinaryExpression: " << std::endl;
+        std::wcout << std::wstring(indent, ' ') << L"BinaryExpression: " << std::endl;
         if (primaryExpression1) 
             primaryExpression1->Print(indent + 2);
-        binaryOperator.Print(indent + 2);
+        std::wcout << std::wstring(indent + 2, ' ') << L"binaryOperator: " << binaryOperator << std::endl;
         if (primaryExpression2)
             primaryExpression2->Print(indent + 2);
     }
 
     void UnaryExpression::Print(const int indent /*= 0*/) const
     {
-        std::cout << std::string(indent, ' ') << "UnaryExpression: " << std::endl;
-        unaryOperator.Print(indent + 2);
+        std::wcout << std::wstring(indent, ' ') << L"UnaryExpression: " << std::endl;
+        std::wcout << std::wstring(indent + 2, ' ') << L"unaryOperator: " << unaryOperator << std::endl;
         if (primaryExpression)
             primaryExpression->Print(indent + 2);
     }
 
     void FunctionName::Print(const int indent /*= 0*/) const
     {
-        std::cout << std::string(indent, ' ') << "FunctionName: " << std::endl;
+        std::wcout << std::wstring(indent, ' ') << L"FunctionName: " << std::endl;
     }
 
     void FunctionDefinition::Print(const int indent /*= 0*/) const
     {
-        std::cout << std::string(indent, ' ') << "FunctionDefinition: " << std::endl;
+        std::wcout << std::wstring(indent, ' ') << L"FunctionDefinition: " << std::endl;
 
-        name.Print(indent + 2);
-        params.Print(indent + 2);
-        if(block)
-            block->Print (indent + 2);
+        if (name)
+            name->Print(indent + 2);
+        if (functionParameter)
+            functionParameter->Print(indent + 2);
+        if (block)
+            block->Print(indent + 2);
+    }
+
+    void FunctionParameter::Print(const int indent /*= 0*/) const
+    {
+        std::wcout << std::wstring(indent, ' ') << L"FunctionParameter: " << std::endl;
+
+        if (nameList)
+            nameList->Print(indent + 2);
     }
 
     void FunctionCall::Print(const int indent /*= 0*/) const
     {
-        std::cout << std::string(indent, ' ') << "FunctionCall: " << std::endl;
-        name.Print(indent + 2);
-        if (functionArguments)
-            functionArguments->Print(indent + 2);
+        std::wcout << std::wstring(indent, ' ') << L"FunctionCall: " << std::endl;
+        if (name)
+            name->Print(indent + 2);
+        if (functionArgument)
+            functionArgument->Print(indent + 2);
     }
 
-    void FunctionArguments::Print(const int indent /*= 0*/) const
+    void FunctionArgument::Print(const int indent /*= 0*/) const
     {
-        std::cout << std::string(indent, ' ') << "FunctionArguments: " << std::endl;
-        if(expressions)
-            expressions->Print(indent + 2);
+        std::wcout << std::wstring(indent, ' ') << L"FunctionArgument: " << std::endl;
+        if(expressionList)
+            expressionList->Print(indent + 2);
     }
 
     void Statement::Print(const int indent /*= 0*/) const
     {
-        std::cout << std::string(indent, ' ') << "Statement: " << std::endl;
-        std::visit([indent](const auto& val) 
-            {
-                using T = std::decay_t<decltype(val)>;
-                if constexpr (is_smart_ptr_v<T>) {
-                    if (val)
-                        val->Print(indent + 2);
-                }
-                else {
-                    val.Print(indent + 2);
-                }
-            }, statement);
+        std::wcout << std::wstring(indent, ' ') << L"Statement: " << std::endl;
+        if (statement)
+            statement->Print(indent + 2);
     }
 
-    void StatReturn::Print(const int indent /*= 0*/) const
+    void Return::Print(const int indent /*= 0*/) const
     {
-        std::cout << std::string(indent, ' ') << "StatReturn: " << std::endl;
+        std::wcout << std::wstring(indent, ' ') << L"Return: " << std::endl;
     }
 
-    void StatBreak::Print(const int indent /*= 0*/) const
+    void Break::Print(const int indent /*= 0*/) const
     {
-        std::cout << std::string(indent, ' ') << "StatBreak: " << std::endl;
+        std::wcout << std::wstring(indent, ' ') << L"Break: " << std::endl;
     }
 
-    void StatGoto::Print(const int indent /*= 0*/) const
+    void While::Print(const int indent /*= 0*/) const
     {
-        std::cout << std::string(indent, ' ') << "StatGoto: " << std::endl;
+        std::wcout << std::wstring(indent, ' ') << L"While: " << std::endl;
     }
 
-    void StatDo::Print(const int indent /*= 0*/) const
+    void If::Print(const int indent /*= 0*/) const
     {
-        std::cout << std::string(indent, ' ') << "StatDo: " << std::endl;
-    }
-
-    void StatWhile::Print(const int indent /*= 0*/) const
-    {
-        std::cout << std::string(indent, ' ') << "StatWhile: " << std::endl;
-    }
-
-    void StatRepeat::Print(const int indent /*= 0*/) const
-    {
-        std::cout << std::string(indent, ' ') << "StatRepeat: " << std::endl;
-    }
-
-    void StatIf::Print(const int indent /*= 0*/) const
-    {
-        std::cout << std::string(indent, ' ') << "StatIf: " << std::endl;
+        std::wcout << std::wstring(indent, ' ') << L"If: " << std::endl;
         if (expression)
             expression->Print(indent + 2);
         if(block)
@@ -228,8 +179,8 @@ namespace lua
             statIf->Print(indent + 2);
     }
 
-    void StatFor::Print(const int indent /*= 0*/) const
+    void For::Print(const int indent /*= 0*/) const
     {
-        std::cout << std::string(indent, ' ') << "StatFor: " << std::endl;
+        std::wcout << std::wstring(indent, ' ') << L"For: " << std::endl;
     }
 }

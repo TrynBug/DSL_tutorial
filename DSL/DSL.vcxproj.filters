@@ -14,59 +14,38 @@
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
     <Filter Include="소스 파일\BoostParser">
-      <UniqueIdentifier>{be980466-0d21-4d5a-9ba1-e4dd21ae11ec}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="소스 파일\BoostParser2">
       <UniqueIdentifier>{970b3cf6-9594-4011-b6a0-f53f8fdadbce}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="CDSL.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="Main.cpp">
       <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="CDSLManager.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="CDSLScript.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="parser.cpp">
-      <Filter>소스 파일\BoostParser</Filter>
     </ClCompile>
     <ClCompile Include="ast.cpp">
       <Filter>소스 파일\BoostParser</Filter>
     </ClCompile>
-    <ClCompile Include="ast2.cpp">
-      <Filter>소스 파일\BoostParser2</Filter>
+    <ClCompile Include="parser.cpp">
+      <Filter>소스 파일\BoostParser</Filter>
     </ClCompile>
-    <ClCompile Include="parser2.cpp">
-      <Filter>소스 파일\BoostParser2</Filter>
+    <ClCompile Include="DSLManager.cpp">
+      <Filter>소스 파일\BoostParser</Filter>
+    </ClCompile>
+    <ClCompile Include="Executor.cpp">
+      <Filter>소스 파일\BoostParser</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="CDSL.h">
-      <Filter>소스 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="CDSLManager.h">
-      <Filter>소스 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="CDSLScript.h">
-      <Filter>소스 파일</Filter>
-    </ClInclude>
     <ClInclude Include="ast.h">
       <Filter>소스 파일\BoostParser</Filter>
     </ClInclude>
     <ClInclude Include="parser.h">
       <Filter>소스 파일\BoostParser</Filter>
     </ClInclude>
-    <ClInclude Include="ast2.h">
-      <Filter>소스 파일\BoostParser2</Filter>
+    <ClInclude Include="DSLManager.h">
+      <Filter>소스 파일\BoostParser</Filter>
     </ClInclude>
-    <ClInclude Include="parser2.h">
-      <Filter>소스 파일\BoostParser2</Filter>
+    <ClInclude Include="Executor.h">
+      <Filter>소스 파일\BoostParser</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
