@@ -1,97 +1,51 @@
 ﻿
-
-#include <thread>
-#include <chrono>
-#include <fstream>
-
 #include "ast.h"
 #include "parser.h"
-#include "Executor.h"
+#include "Environment.h"
 
 #include "DSLManager.h"
-
-using std::placeholders::_1;
-using std::placeholders::_2;
-using std::placeholders::_3;
-using std::placeholders::_4;
-using std::placeholders::_5;
-using std::placeholders::_6;
-using std::placeholders::_7;
-using std::placeholders::_8;
-using std::placeholders::_9;
 
 namespace dsl
 {
 
-DSLManager* DSLManager::m_pInstance;
-std::mutex DSLManager::m_lock;
+DSLManager* DSLManager::sm_pInstance;
+std::mutex DSLManager::sm_lock;
 
 DSLManager::DSLManager()
 {
 
 }
 
+DSLManager::~DSLManager()
+{
+
+}
+
 DSLManager* DSLManager::GetInstance()
 {
-	if (nullptr != m_pInstance)
+	if (nullptr != sm_pInstance)
 	{
-		return m_pInstance;
+		return sm_pInstance;
 	}
 	else
 	{
-		std::lock_guard<std::mutex> lockGuard(m_lock);
-		if (nullptr == m_pInstance)
+		std::lock_guard<std::mutex> lockGuard(sm_lock);
+		if (nullptr == sm_pInstance)
 		{
-			m_pInstance = new DSLManager();
+			sm_pInstance = new DSLManager();
 		}
 
-		return m_pInstance;
+		return sm_pInstance;
 	}
 }
 
 bool DSLManager::Initialize()
 {
 
-
-
-	return true;
-}
-
-// API 함수를 등록한다.
-// API 함수는 모든 스크립트에서 사용가능한 함수이다.
-bool DSLManager::AddAPIFunction(const std::wstring& strFuncName, GenericFunc funcAPI)
-{
-	std::unique_lock lock(m_slockApiFunctionMap);
-	m_apiFunctionMap[strFuncName] = funcAPI;
 	return true;
 }
 
 
-// 함수명으로 API 함수를 찾는다.
-const DSLManager::GenericFunc DSLManager::GetAPIFunction(const std::wstring& strFuncName)
-{
-	std::shared_lock lock(m_slockApiFunctionMap);
-
-	const auto iter = m_apiFunctionMap.find(strFuncName);
-	if (iter == m_apiFunctionMap.end())
-		return nullptr;
-
-	return iter->second;
-}
-
-std::any DSLManager::CallAPIFunction(const std::wstring& strFuncName, const std::vector<std::any>& args)
-{
-	std::shared_lock lock(m_slockApiFunctionMap);
-
-	const auto iter = m_apiFunctionMap.find(strFuncName);
-	if (iter == m_apiFunctionMap.end())
-	{
-		throw std::runtime_error("Function not found");
-	}
-
-	const GenericFunc& func = iter->second;
-	return func(args);
-}
 
 // 스크립트 파일 하나를 로드해서 AST를 만든다.
 bool DSLManager::LoadScript(const std::wstring& strFileName)
@@ -119,7 +73,7 @@ bool DSLManager::LoadScript(const std::wstring& strFileName)
 	}
 
 	// insert
-	std::lock_guard<std::mutex> lockGuard(m_lock);
+	std::unique_lock lock(m_slock);
 	m_ASTMap[strFileName] = spAST;
 
 	return true;
@@ -134,7 +88,7 @@ ASTPtr DSLManager::MakeAST(std::wstring& strScript)
 // AST 얻기
 ASTPtr DSLManager::GetAST(const std::wstring& strFileName)
 {
-	std::lock_guard<std::mutex> lockGuard(m_lock);
+	std::shared_lock lock(m_slock);
 
 	auto iter = m_ASTMap.find(strFileName);
 	if (iter == m_ASTMap.end())
@@ -144,9 +98,102 @@ ASTPtr DSLManager::GetAST(const std::wstring& strFileName)
 }
 
 // Environment 생성
-ExecutorPtr DSLManager::MakeEnvironment()
+EnvironmentPtr DSLManager::MakeEnvironment()
 {
 	return nullptr;
+}
+
+
+
+// 함수 제거
+void DSLManager::RemoveFunction(const std::wstring& name)
+{
+	std::unique_lock lock(m_slock);
+	m_funcMap.erase(name);
+}
+
+// 함수 가져오기
+DSLManager::FunctionType DSLManager::GetFunction(const std::wstring& name)
+{
+	std::shared_lock lock(m_slock);
+
+	auto iter = m_funcMap.find(name);
+	if (iter != m_funcMap.end())
+		return iter->second;
+
+	return nullptr;
+}
+
+// 함수 실행 (인자값 전달)
+std::any DSLManager::ExecuteFunction(const std::wstring& name, const std::vector<std::any>& args)
+{
+	std::shared_lock lock(m_slock);
+
+	auto it = m_funcMap.find(name);
+	if (it != m_funcMap.end())
+	{
+		return it->second(args);
+	}
+	else
+	{
+		std::wcout << L"Function '" + name + L"' not found" << std::endl;
+	}
+
+	return 0;
+}
+
+// 함수 존재 여부 확인
+bool DSLManager::HasFunction(const std::wstring& name) const
+{
+	std::shared_lock lock(m_slock);
+
+	return m_funcMap.contains(name);
+}
+
+
+// 함수 제거
+void DSLManager::RemoveApiFunction(const std::wstring& name)
+{
+	std::unique_lock lock(m_slock);
+	m_apiFuncMap.erase(name);
+}
+
+// 함수 가져오기
+DSLManager::FunctionType DSLManager::GetApiFunction(const std::wstring& name)
+{
+	std::shared_lock lock(m_slock);
+
+	auto iter = m_apiFuncMap.find(name);
+	if (iter != m_apiFuncMap.end())
+		return iter->second;
+
+	return nullptr;
+}
+
+// 함수 실행 (인자값 전달)
+std::any DSLManager::ExecuteApiFunction(const std::wstring& name, const std::vector<std::any>& args)
+{
+	std::shared_lock lock(m_slock);
+
+	auto it = m_apiFuncMap.find(name);
+	if (it != m_apiFuncMap.end())
+	{
+		return it->second(args);
+	}
+	else
+	{
+		std::wcout << L"API Function '" + name + L"' not found" << std::endl;
+	}
+
+	return 0;
+}
+
+// 함수 존재 여부 확인
+bool DSLManager::HasApiFunction(const std::wstring& name) const
+{
+	std::shared_lock lock(m_slock);
+
+	return m_apiFuncMap.contains(name);
 }
 
 }

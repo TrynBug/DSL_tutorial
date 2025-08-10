@@ -129,14 +129,16 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="ast.h" />
-    <ClInclude Include="Executor.h" />
+    <ClInclude Include="Environment.h" />
     <ClInclude Include="DSLManager.h" />
+    <ClInclude Include="EnvironmentDefine.h" />
     <ClInclude Include="parser.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ast.cpp" />
-    <ClCompile Include="Executor.cpp" />
+    <ClCompile Include="Environment.cpp" />
     <ClCompile Include="DSLManager.cpp" />
+    <ClCompile Include="EnvironmentDefine.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="parser.cpp" />
   </ItemGroup>

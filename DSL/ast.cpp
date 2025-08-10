@@ -55,6 +55,17 @@ namespace dsl
        }
     }
 
+    void Block::Iterate(const FuncASTIterateCallback& callback) const
+    {
+        for (const BaseCPtr& statement : statements)
+        {
+            callback(statement);
+
+            if (statement)
+                statement->Iterate(callback);
+        }
+    }
+
     void Assignment::Print(const int indent /*= 0*/) const
     {
         std::wcout << std::wstring(indent, ' ') << L"Assignment: " << std::endl;
