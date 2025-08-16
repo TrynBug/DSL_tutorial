@@ -180,12 +180,6 @@ namespace dsl
 			}
 			break;
 
-			case EASTType::FunctionName:
-			{
-
-			}
-			break;
-
 			case EASTType::FunctionDefinition:
 			{
 

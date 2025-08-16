@@ -30,6 +30,10 @@ namespace dsl
 		// 실제 함수 타입 (파라미터 타입으로부터 함수 시그니처를 생성한다.)
 		using FunctionType = std::function<std::any(const std::vector<std::any>&)>;
 
+		// 함수 map. Key=함수이름, Value=함수
+		using FunctionMap = std::unordered_map<std::wstring, FunctionType>;
+		using FunctionMapPtr = std::shared_ptr<FunctionMap>;
+		using FunctionMapCPtr = std::shared_ptr<const FunctionMap>;
 
 	public:
 		DSLManager();
@@ -41,26 +45,25 @@ namespace dsl
 		bool Initialize();
 
 	public:
-		size_t GetFunctionCount() const { return m_funcMap.size(); }
-		size_t GetApiFunctionCount() const { return m_apiFuncMap.size(); }
+		size_t GetASTFunctionCount() const;
+		size_t GetASTFunctionCount(const std::wstring& strScriptName) const;
+		size_t GetApiFunctionCount() const;
+
+		ASTPtr GetAST(const std::wstring& strFileName);
 
 		/* AST */
 		bool LoadScript(const std::wstring& strFileName);
 
-		ASTPtr MakeAST(std::wstring& strScript);
-		ASTPtr GetAST(const std::wstring& strFileName);
-
 		EnvironmentPtr MakeEnvironment();
 
-
-		/* Function */
+		/* AST Function */
 		template<typename... Args>
-		void AddFunction(const std::wstring& name, std::function<std::any(Args...)> func);
+		void AddASTFunction(const std::wstring& scriptName, const std::wstring& funcName, std::function<std::any(Args...)> func);
 
-		void RemoveFunction(const std::wstring& name);
-		FunctionType GetFunction(const std::wstring& name);
-		std::any ExecuteFunction(const std::wstring& name, const std::vector<std::any>& args = {});
-		bool HasFunction(const std::wstring& name) const;
+		void RemoveASTFunction(const std::wstring& scriptName, const std::wstring& funcName);
+		const FunctionType& GetASTFunction(const std::wstring& scriptName, const std::wstring& funcName);
+		std::any ExecuteASTFunction(const std::wstring& scriptName, const std::wstring& funcName, const std::vector<std::any>& args = {});
+		bool HasASTFunction(const std::wstring& scriptName, const std::wstring& funcName) const;
 
 		/* API Function */
 		template<typename... Args>
@@ -72,6 +75,11 @@ namespace dsl
 		bool HasApiFunction(const std::wstring& name) const;
 
 	private:
+		ASTPtr makeAST(std::wstring& strScript);
+		FunctionMapPtr makeFunctionMap(const ASTCPtr spAST);
+
+	private:
+
 		// 전달받은 인자(args)들을 함수 시그니처에 맞는 타입으로 변환시킨다음, 함수(func)에 인자를 전달하여 호출하는 헬퍼함수
 		template<typename... Args, size_t... I>
 		static std::any callFunction(std::function<std::any(Args...)> func, const std::vector<std::any>& args, std::index_sequence<I...>);
@@ -103,26 +111,26 @@ namespace dsl
 		// lock
 		mutable std::shared_mutex m_slock;
 
+		// AST map
+		// Key=script 파일명, Value=AST
+		std::unordered_map<std::wstring, ASTPtr> m_ASTMap;
+
 		// 사용자 함수 map
-		// Key=함수명, Value=함수
-		std::unordered_map<std::wstring, FunctionType> m_funcMap;
+		// Key=script 파일명, Value=<Key=함수명, Value=함수>
+		std::unordered_map<std::wstring, FunctionMapPtr> m_ASTFuncMap;
 
 		// API 함수 map
 		// API 함수는 모든 스크립트에서 공용으로 사용할 수 있는 함수이다.
 		// Key=함수명, Value=함수
-		std::unordered_map<std::wstring, FunctionType> m_apiFuncMap;
-
-		// AST map
-		// Key=script 파일명, Value=AST
-		std::unordered_map<std::wstring, ASTPtr> m_ASTMap;
+		FunctionMap m_apiFuncMap;
 	};
 
 
 
 
-	// 함수 등록 (파라미터 타입만 지정)
+	// AST 함수 등록 (파라미터 타입만 지정)
 	template<typename... Args>
-	void DSLManager::AddFunction(const std::wstring& funcName, std::function<std::any(Args...)> func) 
+	void DSLManager::AddASTFunction(const std::wstring& scriptName, const std::wstring& funcName, std::function<std::any(Args...)> func)
 	{
 		// 함수를 래핑하여 std::vector<std::any>를 받는 형태로 변환
 		auto wrapper = [func](const std::vector<std::any>& args) -> std::any 
@@ -138,10 +146,14 @@ namespace dsl
 
 		std::unique_lock lock(m_slock);
 
-		if (m_funcMap.contains(funcName))
-			std::cout << std::format("function already exists. funcName={}", funcName) << std::endl;
+		FunctionMapPtr& spFunctionMap = m_ASTFuncMap[scriptName];
+		if (!spFunctionMap)
+			spFunctionMap = std::make_shared<FunctionMap>();
 
-		m_funcMap[funcName] = wrapper;
+		if (spFunctionMap->contains(funcName))
+			std::cout << std::format("function already exists. scriptName={}, funcName={}", scriptName, funcName) << std::endl;
+
+		spFunctionMap->insert(std::make_pair(funcName, wrapper));
 	}
 
 

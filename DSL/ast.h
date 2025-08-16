@@ -34,7 +34,6 @@ namespace dsl
         PrimaryExpression,
         BinaryExpression,
         UnaryExpression,
-        FunctionName,
         FunctionDefinition,
         FunctionParameter,
         FunctionCall,
@@ -65,7 +64,6 @@ namespace dsl
     struct PrimaryExpression;
     struct BinaryExpression;
     struct UnaryExpression;
-    struct FunctionName;
     struct FunctionDefinition;
     struct FunctionParameter;
     struct FunctionCall;
@@ -109,8 +107,6 @@ namespace dsl
     using BinaryExpressionCPtr = std::shared_ptr<const BinaryExpression>;
     using UnaryExpressionPtr = std::shared_ptr<UnaryExpression>;
     using UnaryExpressionCPtr = std::shared_ptr<const UnaryExpression>;
-    using FunctionNamePtr = std::shared_ptr<FunctionName>;
-    using FunctionNameCPtr = std::shared_ptr<const FunctionName>;
     using FunctionDefinitionPtr = std::shared_ptr<FunctionDefinition>;
     using FunctionDefinitionCPtr = std::shared_ptr<const FunctionDefinition>;
     using FunctionParameterPtr = std::shared_ptr<FunctionParameter>;
@@ -154,7 +150,8 @@ namespace dsl
         Name(const std::wstring& val) : name(val) {}
 
         virtual EASTType GetType() const override { return EASTType::Name; }
-        void Print(const int indent = 0) const override;
+        virtual void Print(const int indent = 0) const override;
+        virtual void Iterate(const FuncASTIterateCallback& callback) const override;
     };
 
     struct NameList : public Base
@@ -165,7 +162,8 @@ namespace dsl
         NameList(const std::vector<BasePtr>& val) : names(val) {}
 
         virtual EASTType GetType() const override { return EASTType::NameList; }
-        void Print(const int indent = 0) const override;
+        virtual void Print(const int indent = 0) const override;
+        virtual void Iterate(const FuncASTIterateCallback& callback) const override;
     };
 
     struct Numeral : public Base
@@ -179,7 +177,8 @@ namespace dsl
         Numeral(double val) : isInteger(false), intValue(0), floatValue(val) {}
 
         virtual EASTType GetType() const override { return EASTType::Numeral; }
-        void Print(const int indent = 0) const override;
+        virtual void Print(const int indent = 0) const override;
+        virtual void Iterate(const FuncASTIterateCallback& callback) const override;
     };
 
     struct Boolean : public Base
@@ -190,7 +189,8 @@ namespace dsl
         Boolean(bool val) : value(val) {}
 
         virtual EASTType GetType() const override { return EASTType::Boolean; }
-        void Print(const int indent = 0) const override;
+        virtual void Print(const int indent = 0) const override;
+        virtual void Iterate(const FuncASTIterateCallback& callback) const override;
     };
 
     struct LiteralString : public Base
@@ -201,7 +201,8 @@ namespace dsl
         LiteralString(const std::wstring& val) : value(val) {}
 
         virtual EASTType GetType() const override { return EASTType::LiteralString; }
-        void Print(const int indent = 0) const override;
+        virtual void Print(const int indent = 0) const override;
+        virtual void Iterate(const FuncASTIterateCallback& callback) const override;
     };
 
     struct AST : public Base
@@ -212,7 +213,8 @@ namespace dsl
         AST(const BasePtr& val) : block(val) {}
 
         virtual EASTType GetType() const override { return EASTType::AST; }
-        void Print(const int indent = 0) const override;
+        virtual void Print(const int indent = 0) const override;
+        virtual void Iterate(const FuncASTIterateCallback& callback) const override;
     };
 
     struct Block : public Base
@@ -223,7 +225,7 @@ namespace dsl
        Block(const std::vector<BasePtr>& val) : statements(val) {}
        
        virtual EASTType GetType() const override { return EASTType::Block; }
-       void Print(const int indent = 0) const override;
+       virtual void Print(const int indent = 0) const override;
        virtual void Iterate(const FuncASTIterateCallback& callback) const override;
     };
 
@@ -236,7 +238,8 @@ namespace dsl
         Assignment(const BasePtr& _name, const BasePtr& _expression) : name(_name), expression(_expression) {}
 
         virtual EASTType GetType() const override { return EASTType::Assignment; }
-        void Print(const int indent = 0) const override;
+        virtual void Print(const int indent = 0) const override;
+        virtual void Iterate(const FuncASTIterateCallback& callback) const override;
     };
 
     struct Expression : public Base
@@ -247,7 +250,8 @@ namespace dsl
         Expression(const BasePtr& val) : expression(val) {}
 
         virtual EASTType GetType() const override { return EASTType::Expression; }
-        void Print(const int indent = 0) const override;
+        virtual void Print(const int indent = 0) const override;
+        virtual void Iterate(const FuncASTIterateCallback& callback) const override;
     };
 
     struct ExpressionList : public Base
@@ -258,7 +262,8 @@ namespace dsl
         ExpressionList(const std::vector<BasePtr>& val) : expressions(val) {}
 
         virtual EASTType GetType() const override { return EASTType::ExpressionList; }
-        void Print(const int indent = 0) const override;
+        virtual void Print(const int indent = 0) const override;
+        virtual void Iterate(const FuncASTIterateCallback& callback) const override;
     };
 
     struct PrimaryExpression : public Base
@@ -266,7 +271,8 @@ namespace dsl
         BasePtr primaryExpression;
 
         virtual EASTType GetType() const override { return EASTType::PrimaryExpression; }
-        void Print(const int indent = 0) const override;
+        virtual void Print(const int indent = 0) const override;
+        virtual void Iterate(const FuncASTIterateCallback& callback) const override;
     };
 
     struct BinaryExpression : public Base
@@ -279,7 +285,8 @@ namespace dsl
         BinaryExpression(const BasePtr& ex1, const std::wstring& op, const BasePtr& ex2) : primaryExpression1(ex1), binaryOperator(op), primaryExpression2(ex2) {}
 
         virtual EASTType GetType() const override { return EASTType::BinaryExpression; }
-        void Print(const int indent = 0) const override;
+        virtual void Print(const int indent = 0) const override;
+        virtual void Iterate(const FuncASTIterateCallback& callback) const override;
     };
 
     struct UnaryExpression : public Base
@@ -291,15 +298,8 @@ namespace dsl
         UnaryExpression(const std::wstring& op, const BasePtr& ex) : unaryOperator(op), primaryExpression(ex) {}
 
         virtual EASTType GetType() const override { return EASTType::UnaryExpression; }
-        void Print(const int indent = 0) const override;
-    };
-
-    struct FunctionName : public Base
-    {
-        Name name;
-
-        virtual EASTType GetType() const override { return EASTType::FunctionName; }
-        void Print(const int indent = 0) const override;
+        virtual void Print(const int indent = 0) const override;
+        virtual void Iterate(const FuncASTIterateCallback& callback) const override;
     };
 
     struct FunctionDefinition : public Base
@@ -312,7 +312,8 @@ namespace dsl
         FunctionDefinition(const BasePtr& _name, const BasePtr& _functionParameter, const BasePtr& _block) : name(_name), functionParameter(_functionParameter), block(_block) {}
 
         virtual EASTType GetType() const override { return EASTType::FunctionDefinition; }
-        void Print(const int indent = 0) const override;
+        virtual void Print(const int indent = 0) const override;
+        virtual void Iterate(const FuncASTIterateCallback& callback) const override;
     };
 
     struct FunctionParameter : public Base
@@ -323,7 +324,8 @@ namespace dsl
         FunctionParameter(const BasePtr& _nameList) : nameList(_nameList) {}
 
         virtual EASTType GetType() const override { return EASTType::FunctionParameter; }
-        void Print(const int indent = 0) const override;
+        virtual void Print(const int indent = 0) const override;
+        virtual void Iterate(const FuncASTIterateCallback& callback) const override;
     };
 
     struct FunctionArgument : public Base
@@ -334,7 +336,8 @@ namespace dsl
         FunctionArgument(const BasePtr& _expressionList) : expressionList(_expressionList) {}
 
         virtual EASTType GetType() const override { return EASTType::FunctionArgument; }
-        void Print(const int indent = 0) const override;
+        virtual void Print(const int indent = 0) const override;
+        virtual void Iterate(const FuncASTIterateCallback& callback) const override;
     };
 
     struct FunctionCall : public Base
@@ -346,7 +349,8 @@ namespace dsl
         FunctionCall(const BasePtr& _name, const BasePtr& _functionArgument) : name(_name), functionArgument(_functionArgument) {}
 
         virtual EASTType GetType() const override { return EASTType::FunctionCall; }
-        void Print(const int indent = 0) const override;
+        virtual void Print(const int indent = 0) const override;
+        virtual void Iterate(const FuncASTIterateCallback& callback) const override;
     };
 
     struct Statement : public Base
@@ -357,7 +361,8 @@ namespace dsl
         Statement(const BasePtr& _statement) : statement(_statement) {}
 
         virtual EASTType GetType() const override { return EASTType::Statement; }
-        void Print(const int indent = 0) const override;
+        virtual void Print(const int indent = 0) const override;
+        virtual void Iterate(const FuncASTIterateCallback& callback) const override;
     };
 
     struct Return : public Base
@@ -365,7 +370,8 @@ namespace dsl
         std::vector<BasePtr> expressions;
 
         virtual EASTType GetType() const override { return EASTType::Return; }
-        void Print(const int indent = 0) const override;
+        virtual void Print(const int indent = 0) const override;
+        virtual void Iterate(const FuncASTIterateCallback& callback) const override;
     };
 
     struct Break : public Base
@@ -373,7 +379,8 @@ namespace dsl
         std::wstring value;
 
         virtual EASTType GetType() const override { return EASTType::Break; }
-        void Print(const int indent = 0) const override;
+        virtual void Print(const int indent = 0) const override;
+        virtual void Iterate(const FuncASTIterateCallback& callback) const override;
     };
 
     struct While : public Base
@@ -382,7 +389,8 @@ namespace dsl
         BasePtr statDo;
 
         virtual EASTType GetType() const override { return EASTType::While; }
-        void Print(const int indent = 0) const override;
+        virtual void Print(const int indent = 0) const override;
+        virtual void Iterate(const FuncASTIterateCallback& callback) const override;
     };
 
     struct If : public Base
@@ -395,7 +403,8 @@ namespace dsl
         If(const BasePtr& _expression, const BasePtr& _block, const BasePtr& _statIf) : expression(_expression), block(_block), statIf(_statIf) {}
 
         virtual EASTType GetType() const override { return EASTType::If; }
-        void Print(const int indent = 0) const override;
+        virtual void Print(const int indent = 0) const override;
+        virtual void Iterate(const FuncASTIterateCallback& callback) const override;
     };
 
     struct For : public Base
@@ -406,7 +415,8 @@ namespace dsl
         BasePtr expression3;
 
         virtual EASTType GetType() const override { return EASTType::For; }
-        void Print(const int indent = 0) const override;
+        virtual void Print(const int indent = 0) const override;
+        virtual void Iterate(const FuncASTIterateCallback& callback) const override;
     };
 
 
