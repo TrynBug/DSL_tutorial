@@ -10,6 +10,7 @@
 #include <memory>
 #include <fstream>
 #include <tuple>
+#include <thread>
 #include <mutex>
 #include <shared_mutex>
 #include <thread>
@@ -17,6 +18,9 @@
 #include <type_traits>
 #include <typeindex>
 #include <stdexcept>
+#include <exception>
+
+#include "Utils.h"
 
 namespace dsl
 {
@@ -29,11 +33,6 @@ namespace dsl
 
 		// 실제 함수 타입 (파라미터 타입으로부터 함수 시그니처를 생성한다.)
 		using FunctionType = std::function<std::any(const std::vector<std::any>&)>;
-
-		// 함수 map. Key=함수이름, Value=함수
-		using FunctionMap = std::unordered_map<std::wstring, FunctionType>;
-		using FunctionMapPtr = std::shared_ptr<FunctionMap>;
-		using FunctionMapCPtr = std::shared_ptr<const FunctionMap>;
 
 	public:
 		DSLManager();
@@ -49,20 +48,18 @@ namespace dsl
 		size_t GetASTFunctionCount(const std::wstring& strScriptName) const;
 		size_t GetApiFunctionCount() const;
 
-		ASTPtr GetAST(const std::wstring& strFileName);
+		ASTPtr GetAST(const std::wstring& scriptName);
 
 		/* AST */
-		bool LoadScript(const std::wstring& strFileName);
+		bool LoadScript(const std::wstring& scriptName);
 
 		EnvironmentPtr MakeEnvironment();
 
 		/* AST Function */
-		template<typename... Args>
-		void AddASTFunction(const std::wstring& scriptName, const std::wstring& funcName, std::function<std::any(Args...)> func);
-
+		void AddASTFunction(const std::wstring& scriptName, const ASTCPtr spAST);
+		void AddASTFunction(const std::wstring& scriptName, const FunctionDefinitionCPtr spFunctionDefinition);
 		void RemoveASTFunction(const std::wstring& scriptName, const std::wstring& funcName);
-		const FunctionType& GetASTFunction(const std::wstring& scriptName, const std::wstring& funcName);
-		std::any ExecuteASTFunction(const std::wstring& scriptName, const std::wstring& funcName, const std::vector<std::any>& args = {});
+		const FunctionDefinitionCPtr& GetASTFunction(const std::wstring& scriptName, const std::wstring& funcName);
 		bool HasASTFunction(const std::wstring& scriptName, const std::wstring& funcName) const;
 
 		/* API Function */
@@ -75,8 +72,8 @@ namespace dsl
 		bool HasApiFunction(const std::wstring& name) const;
 
 	private:
+		void initializeApiFunctionMap();
 		ASTPtr makeAST(std::wstring& strScript);
-		FunctionMapPtr makeFunctionMap(const ASTCPtr spAST);
 
 	private:
 
@@ -116,72 +113,40 @@ namespace dsl
 		std::unordered_map<std::wstring, ASTPtr> m_ASTMap;
 
 		// 사용자 함수 map
-		// Key=script 파일명, Value=<Key=함수명, Value=함수>
-		std::unordered_map<std::wstring, FunctionMapPtr> m_ASTFuncMap;
+		// 사용자 함수는 스크립트 내에서 사용할 수 있는 함수이다.
+		// Key=script 파일명, Value=<Key=함수명, Value=Function AST객체>
+		std::unordered_map<std::wstring, std::unordered_map<std::wstring, FunctionDefinitionCPtr>> m_ASTFuncMap;
 
 		// API 함수 map
 		// API 함수는 모든 스크립트에서 공용으로 사용할 수 있는 함수이다.
 		// Key=함수명, Value=함수
-		FunctionMap m_apiFuncMap;
+		std::unordered_map<std::wstring, FunctionType> m_apiFuncMap;
 	};
 
 
-
-
-	// AST 함수 등록 (파라미터 타입만 지정)
-	template<typename... Args>
-	void DSLManager::AddASTFunction(const std::wstring& scriptName, const std::wstring& funcName, std::function<std::any(Args...)> func)
-	{
-		// 함수를 래핑하여 std::vector<std::any>를 받는 형태로 변환
-		auto wrapper = [func](const std::vector<std::any>& args) -> std::any 
-		{
-			if (sizeof...(Args) != args.size()) // 함수 파라미터 개수와 전달된 인자 개수가 일치하는지 체크
-			{
-				throw std::runtime_error(std::format("Argument count mismatch. funcName={}, sizeof(Args)={}, args.size={}"), funcName, sizeof...(Args), args.size());
-			}
-
-			// 인자들을 올바른 타입으로 변환하여 함수 호출
-			return CallFunction<Args...>(func, args, std::make_index_sequence<sizeof...(Args)>{});
-		};
-
-		std::unique_lock lock(m_slock);
-
-		FunctionMapPtr& spFunctionMap = m_ASTFuncMap[scriptName];
-		if (!spFunctionMap)
-			spFunctionMap = std::make_shared<FunctionMap>();
-
-		if (spFunctionMap->contains(funcName))
-			std::cout << std::format("function already exists. scriptName={}, funcName={}", scriptName, funcName) << std::endl;
-
-		spFunctionMap->insert(std::make_pair(funcName, wrapper));
-	}
-
-
-	// 함수 등록 (파라미터 타입만 지정)
+	// API 함수 등록 (템플릿 타입은 파라미터 타입만 나열하면됨. 리턴타입은 std::any 고정)
 	template<typename... Args>
 	void DSLManager::AddApiFunction(const std::wstring& funcName, std::function<std::any(Args...)> func)
 	{
 		// 함수를 래핑하여 std::vector<std::any>를 받는 형태로 변환
-		auto wrapper = [func](const std::vector<std::any>& args) -> std::any
+		auto wrapper = [this, funcName, func](const std::vector<std::any>& args) -> std::any
 			{
 				if (sizeof...(Args) != args.size()) // 함수 파라미터 개수와 전달된 인자 개수가 일치하는지 체크
 				{
-					throw std::runtime_error(std::format("Argument count mismatch. funcName={}, sizeof(Args)={}, args.size={}"), funcName, sizeof...(Args), args.size());
+					throw wexception(std::format(L"Argument count mismatch. funcName={}, sizeof(Args)={}, args.size={}", funcName, sizeof...(Args), args.size()));
 				}
 
 				// 인자들을 올바른 타입으로 변환하여 함수 호출
-				return CallFunction<Args...>(func, args, std::make_index_sequence<sizeof...(Args)>{});
+				return callFunction<Args...>(func, args, std::make_index_sequence<sizeof...(Args)>{});
 			};
 
 		std::unique_lock lock(m_slock);
 
 		if (m_apiFuncMap.contains(funcName))
-			std::cout << std::format("function already exists. funcName={}", funcName) << std::endl;
+			std::wcout << std::format(L"function already exists. funcName={}", funcName) << std::endl;
 
 		m_apiFuncMap[funcName] = wrapper;
 	}
-
-
 
 
 	// 전달받은 인자(args)들을 함수 시그니처에 맞는 타입으로 변환시킨다음, 함수(func)에 인자를 전달하여 호출하는 헬퍼함수
