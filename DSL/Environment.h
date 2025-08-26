@@ -1,8 +1,5 @@
 ﻿#pragma once
 
-
-#include "EnvironmentDefine.h"
-
 namespace dsl
 {
 
@@ -21,6 +18,9 @@ namespace dsl
 
     private:
         EEnvCallStackState runCallStack(EnvCallStackInfo& inCallStackInfo);
+        EnvValBaseUptr executeUnaryOperator(EnvValBaseUptr upEnvValBase, const std::wstring& strOperator);
+        EnvValBaseUptr executeBinaryOperator(EnvValBaseUptr upLeftEnvValBase, const std::wstring& strOperator, EnvValBaseUptr upRightEnvValBase);
+
 
     private:
         ASTCPtr m_spAST;

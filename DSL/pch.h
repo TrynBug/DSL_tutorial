@@ -1,0 +1,23 @@
+#pragma once
+
+#include <Windows.h>
+#include <iostream>
+#include <memory>
+#include <functional>
+#include <string>
+#include <sstream>
+#include <fstream>
+#include <thread>
+#include <chrono>
+#include <vector>
+#include <set>
+#include <map>
+#include <unordered_set>
+#include <unordered_map>
+#include <mutex>
+#include <shared_mutex>
+#include <any>
+#include <type_traits>
+#include <typeindex>
+#include <stdexcept>
+#include <exception>

@@ -1,4 +1,6 @@
-﻿#define BOOST_SPIRIT_DEBUG
+﻿#include "pch.h"
+
+#define BOOST_SPIRIT_DEBUG
 
 #include <boost/fusion/include/adapt_struct.hpp>
 #include <boost/spirit/include/qi.hpp>
@@ -139,7 +141,7 @@ struct dsl_grammar : qi::grammar<Iterator, ASTPtr(), skipper<Iterator>> {
 
         // 최하위 표현식 규칙
         // 이름, 숫자, bool, 문자열, 괄호로 둘러쌓인 표현식
-        // 참고: 순서가 유의미함. FunctionCall은 Name 앞에 있어야 test() 같은 문자열이 함수호출로 제대로 인식됨. 그리고 "(표현식)" 은 가장 마지막에 있어야 함.
+        // 참고: 순서가 유의미함. FunctionCall은 Name 앞에 있어야 test() 같은 문자열이 함수호출로 제대로 인식됨. 그리고 "(ruleExpression)" 은 가장 마지막에 있어야 함.
         rulePrimaryExpression =   ruleNumeral[_val = _1] 
                                 | ruleBoolean[_val = _1]
                                 | ruleLiteralString[_val = _1]

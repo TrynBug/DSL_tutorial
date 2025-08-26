@@ -1,25 +1,5 @@
 ﻿#pragma once
 
-#include <iostream>
-#include <format>
-#include <unordered_map>
-#include <functional>
-#include <string>
-#include <vector>
-#include <any>
-#include <memory>
-#include <fstream>
-#include <tuple>
-#include <thread>
-#include <mutex>
-#include <shared_mutex>
-#include <thread>
-#include <chrono>
-#include <type_traits>
-#include <typeindex>
-#include <stdexcept>
-#include <exception>
-
 #include "Utils.h"
 
 namespace dsl

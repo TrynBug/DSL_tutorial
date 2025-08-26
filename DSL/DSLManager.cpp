@@ -1,6 +1,8 @@
-﻿
+﻿#include "pch.h"
+
 #include "ast.h"
 #include "parser.h"
+#include "EnvironmentDefine.h"
 #include "Environment.h"
 
 #include "DSLManager.h"

@@ -1,13 +1,5 @@
 ﻿#pragma once
 
-#include <iostream>
-#include <string>
-#include <vector>
-#include <map>
-#include <unordered_map>
-#include <memory>
-#include <functional>
-
 /*
 AST는 Abstract Syntax Tree (추상 구문 트리)를 의미한다.
 파싱한 결과를 구조화한 트리 형태의 데이터 구조이다.

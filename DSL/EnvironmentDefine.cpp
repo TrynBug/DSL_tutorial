@@ -1,6 +1,4 @@
-﻿
-#include <iostream>
-#include <string>
+﻿#include "pch.h"
 
 #include "ast.h"
 #include "EnvironmentDefine.h"
