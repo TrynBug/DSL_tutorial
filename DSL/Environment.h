@@ -12,12 +12,18 @@ namespace dsl
         bool Initialize(const ASTCPtr spAST);
 
     public:
-        bool RunOneStep();
         bool Run();
 
 
     private:
-        EEnvCallStackState runCallStack(EnvCallStackInfo& inCallStackInfo);
+        EnvCallStackInfo& insertCallStack(const BaseCPtr& spBase);
+        EEnvCallStackState getCallStackState();
+        const BaseCPtr getCallStackAST();
+        void setCallStackState(const EEnvCallStackState eState);
+
+        bool prepareCallStack();
+        bool runCallStack();
+
         EnvValBaseUptr executeUnaryOperator(EnvValBaseUptr upEnvValBase, const std::wstring& strOperator);
         EnvValBaseUptr executeBinaryOperator(EnvValBaseUptr upLeftEnvValBase, const std::wstring& strOperator, EnvValBaseUptr upRightEnvValBase);
 
